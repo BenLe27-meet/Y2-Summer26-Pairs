@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client = Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
+client = Anthropic(api_key=os.getenv('BEN_ANTHROPIC_API_KEY'))
 
 def run_chat():
     history = []

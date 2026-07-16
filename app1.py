@@ -4,7 +4,7 @@ from anthropic import Anthropic
 from dotenv import load_dotenv
 
 load_dotenv()
-client = Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
+client = Anthropic(api_key=os.getenv('HIBA_ANTHROPIC_API_KEY'))
 
 def run_chat():
     print('You: (type exit to quit)')
