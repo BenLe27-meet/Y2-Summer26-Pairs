@@ -24,7 +24,6 @@ Decide:
 
 - What is the main idea of the web app?
 - What responsibility does each agent have?
-- What information needs to pass between agents?
 - How does the user move through the application from beginning to end?
 - What is the final product?
 
@@ -125,8 +124,12 @@ Write one detailed prompt for Bolt that explains:
 
 - What your app does and the problem it solves
 - What each agent does (its specific job)
-- How you want the app to look and feel
-  -  a tab and chat page for each agent — it's important to mention this explicitly, otherwise Bolt may merge both agents into one chat.
+- How you want the app to look and the features of it:
+  - A tab and chat page for each agent
+  - A loading indicator while the agent is thinking
+  - A send button
+  - A chat bar, etc...
+
 
 Since you already have 3 Python files (your agents), you can import your GitHub repository directly into Bolt. This lets Bolt read and use your existing backend code to build the app around it, instead of writing the backend from scratch.
 
@@ -144,13 +147,6 @@ and `ANTHROPIC_BASE_URL=your-base-url` to the environment variables."
   ANTHROPIC_API_KEY=your-key-here
   ANTHROPIC_BASE_URL=your-base-url
   ```
-
-Describe how you imagine the app to look, and mention the specific features you want, for example:
-
-- A tab for each agent
-- A loading indicator while the agent is thinking
-- A send button
-- A chat bar
 
 > 💡 **Remember what we talked about in our previous sessions about clarity, feedback, and focus? Make sure to keep those in mind when prompting!**
 
