@@ -101,13 +101,15 @@ def run_chat():
             break
 
         history.append({'role': 'user', 'content': user_input})
+        save_message(conn, 'user', user_input)
+        save_message(conn, 'assistant', 'reply')
         #print('History:',history)
         response = client.messages.create(
             model='claude-haiku-4-5-20251001',
             max_tokens=1024,
             temperature=0.7,
             system=system_message,
-            tools=tools,
+            tool=tools,
             messages=history
         )
         if response.stop_reason == "tool_use":
@@ -123,7 +125,7 @@ def run_chat():
                         })
             history.append({'role': 'user', 'content': tool_results})
             continue
-            break        
+
         reply = "".join(
             block.text for block in response.content if block.type == "text"
         )
@@ -131,6 +133,7 @@ def run_chat():
         print(f'Claude: {reply}')
         history.append({'role': 'assistant', 'content': reply})
         save_message(conn, 'assistant', reply)
+        break
  
     conn.close()
 if __name__ == "__main__":
