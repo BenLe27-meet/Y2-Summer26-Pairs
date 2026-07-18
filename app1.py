@@ -94,23 +94,28 @@ def run_chat():
     print('You: (type exit to quit)')
     system_message = f"""
         Your name is Joy. You are a Jamaican uncle with little education but a lot of wisdom from your younger days.
-
+ 
         Your job is to give the user life advice, speaking in patois.
-
+ 
         Rules:
         - Always be friendly.
         - Always be positive, meaning when the user asks for advice, shine a positive light on them and their problems.
         - Always be funny and try to lighten up the user's mood.
         - Never laugh at or make fun of the user.
         - If the user asks for anything other than advice, tell them to go to another source, but still give them a motivational quote, shed a positive light on them, and redirect them to ask you for advice.
-
+ 
         Response format:
         - Start with a one-sentence summary of what the user said.
         - Ground and calm the user down.
         - Give your advice for them.
         - End with a motivational quote to shed a positive light on them.
+ 
+        You have a tool called search_chat_history that lets you look up things the user has told you in PAST sessions, not just this one - it is a persistent record, not limited to the current conversation.
+        IMPORTANT: You do NOT lack memory across sessions. Never tell the user you don't remember things from before or that this is your 'first conversation' with them.
+        Instead, whenever the user asks if you remember something about them (their name, their interests, something they mentioned before, etc.), or references a past conversation, you MUST call search_chat_history first - search for relevant single keywords (like their name, a topic, a hobby) - before answering. Only after checking should you tell them what you found, or admit you searched and found nothing if that's the case.
         """
-    
+ 
+    conn = init_db()
     history = []
  
     while True:
@@ -121,7 +126,6 @@ def run_chat():
  
         history.append({'role': 'user', 'content': user_input})
         save_message(conn, 'user', user_input)
-<<<<<<< Updated upstream
  
         # If the user seems to be asking us to recall something, force a
         # search on the first call instead of hoping the model chooses to.
@@ -150,30 +154,13 @@ def run_chat():
                 messages=history
             )
  
-=======
-        #print('History:',history)
-
-
-        while True:
-            response = client.messages.create(
-                model='claude-haiku-4-5-20251001',
-                max_tokens=500,
-                temperature=0.7,
-                system=system_message,
-                tools=tools,
-                messages=history
-            )
->>>>>>> Stashed changes
             if response.stop_reason == "tool_use":
                 history.append({'role': 'assistant', 'content': response.content})
                 tool_results = []
                 for block in response.content:
                     if block.type == "tool_use" and block.name == "search_chat_history":
                         query = block.input.get("query", "")
-<<<<<<< Updated upstream
-                        print(f"[DEBUG] Forced/auto search query: {query!r}")
                         results = search_chat_history(conn, query)
-                        print(f"[DEBUG] Found {len(results)} result(s)")
                         tool_results.append({
                             "type": "tool_result",
                             "tool_use_id": block.id,
@@ -190,25 +177,6 @@ def run_chat():
             history.append({'role': 'assistant', 'content': reply})
             save_message(conn, 'assistant', reply)
             break  # break out of the for-loop (tool iterations), NOT the outer chat loop
-=======
-                        results = search_chat_history(conn, query)
-                        tool_results.append({ "type": "tool_result",
-                                "tool_use_id": block.id,
-                                "content": str(results) if results else "No matching messages found."
-                            })
-                history.append({'role': 'user', 'content': tool_results})
-                continue  
-
-            break  
-
-        reply = "".join(
-            block.text for block in response.content if block.type == "text"
-        )
-        #print(response)
-        print(f'Claude: {reply}')
-        history.append({'role': 'assistant', 'content': reply})
-        save_message(conn, 'assistant', reply)
->>>>>>> Stashed changes
  
     conn.close()
  
