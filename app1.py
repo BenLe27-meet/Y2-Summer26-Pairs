@@ -5,14 +5,14 @@ import sqlite3
 from anthropic import Anthropic
 from dotenv import load_dotenv
 from datetime import datetime
- 
- 
- 
+
+
+
 load_dotenv()
 client = Anthropic(api_key=os.getenv('HIBA_ANTHROPIC_API_KEY'))
- 
+
 DB_PATH = "chat_history.db"
- 
+
 # Database setup:
 def init_db():
     conn = sqlite3.connect(DB_PATH)
@@ -26,16 +26,16 @@ def init_db():
     """)
     conn.commit()
     return conn
- 
- 
+
+
 def save_message(conn, role, content):
     conn.execute(
         "INSERT INTO messages (role, content, timestamp) VALUES (?, ?, ?)",
         (role, content, datetime.now().isoformat())
     )
     conn.commit()
- 
- 
+
+
 def search_chat_history(conn, query, limit=5):
     """
     Search past messages for a keyword/phrase. Splits the query into
@@ -46,11 +46,11 @@ def search_chat_history(conn, query, limit=5):
     words = [w for w in query.split() if len(w) > 2]  # skip tiny words like "i", "do"
     if not words:
         words = [query]
- 
+
     conditions = " OR ".join(["content LIKE ?"] * len(words))
     params = [f"%{w}%" for w in words]
     params.append(limit)
- 
+
     cursor = conn.execute(
         f"""
         SELECT DISTINCT role, content, timestamp FROM messages
@@ -65,7 +65,7 @@ def search_chat_history(conn, query, limit=5):
         {"role": r[0], "content": r[1], "timestamp": r[2]}
         for r in rows
     ]
- 
+
 # Defining the tool:
 tools = [
     {
@@ -88,45 +88,45 @@ tools = [
         }
     }
 ]
- 
+
 # Chat loop:
-def run_chat():
+def run_agent():
     print('You: (type exit to quit)')
     system_message = f"""
         Your name is Joy. You are a Jamaican uncle with little education but a lot of wisdom from your younger days.
- 
+
         Your job is to give the user life advice, speaking in patois.
- 
+
         Rules:
         - Always be friendly.
         - Always be positive, meaning when the user asks for advice, shine a positive light on them and their problems.
         - Always be funny and try to lighten up the user's mood.
         - Never laugh at or make fun of the user.
         - If the user asks for anything other than advice, tell them to go to another source, but still give them a motivational quote, shed a positive light on them, and redirect them to ask you for advice.
- 
+
         Response format:
         - Start with a one-sentence summary of what the user said.
         - Ground and calm the user down.
         - Give your advice for them.
         - End with a motivational quote to shed a positive light on them.
- 
+
         You have a tool called search_chat_history that lets you look up things the user has told you in PAST sessions, not just this one - it is a persistent record, not limited to the current conversation.
         IMPORTANT: You do NOT lack memory across sessions. Never tell the user you don't remember things from before or that this is your 'first conversation' with them.
         Instead, whenever the user asks if you remember something about them (their name, their interests, something they mentioned before, etc.), or references a past conversation, you MUST call search_chat_history first - search for relevant single keywords (like their name, a topic, a hobby) - before answering. Only after checking should you tell them what you found, or admit you searched and found nothing if that's the case.
         """
- 
+
     conn = init_db()
     history = []
- 
+
     while True:
         user_input = input('>> ')
- 
+
         if user_input.lower() == 'exit':
             break
- 
+
         history.append({'role': 'user', 'content': user_input})
         save_message(conn, 'user', user_input)
- 
+
         # If the user seems to be asking us to recall something, force a
         # search on the first call instead of hoping the model chooses to.
         recall_keywords = [
@@ -134,7 +134,7 @@ def run_chat():
             "previously", "again", "who am i", "what did i"
         ]
         should_force_search = any(kw in user_input.lower() for kw in recall_keywords)
- 
+
         # Loop here to let the model call the tool, see the result,
         # and call it again if needed, until it gives a final text reply.
         max_tool_iterations = 5
@@ -153,7 +153,7 @@ def run_chat():
                 tool_choice=tool_choice,
                 messages=history
             )
- 
+
             if response.stop_reason == "tool_use":
                 history.append({'role': 'assistant', 'content': response.content})
                 tool_results = []
@@ -168,7 +168,7 @@ def run_chat():
                         })
                 history.append({'role': 'user', 'content': tool_results})
                 continue  # go around the for-loop, ask the model again with tool results
- 
+
             # Not a tool call -> this is the final reply
             reply = "".join(
                 block.text for block in response.content if block.type == "text"
@@ -177,8 +177,8 @@ def run_chat():
             history.append({'role': 'assistant', 'content': reply})
             save_message(conn, 'assistant', reply)
             break  # break out of the for-loop (tool iterations), NOT the outer chat loop
- 
+
     conn.close()
- 
+
 if __name__ == "__main__":
-    run_chat()
+    run_agent()
